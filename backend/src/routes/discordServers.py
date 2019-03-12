@@ -1,12 +1,10 @@
 from src import app, api
 from flask import request, g
-from pprint import pformat
 from src import db
 from src.models import DiscordServer, ServerGroup
-from flask import url_for
 from flask_dance.contrib.discord import discord as dAuth
 from flask_restplus import Resource, fields, abort
-from pprint import pprint
+from src.utils import IdType
 
 ns = api.namespace("api/discord", description="Discord Server operations")
 
@@ -18,31 +16,26 @@ serverModel = ns.model(
         "name": fields.String,
         "command_prefixes": fields.List(fields.String),
         "message_prefixes": fields.List(fields.String),
-        "server_group_id": fields.Integer,
-        "id": fields.Integer,
-        "admin_role": fields.Integer,
+        "server_group_id": IdType,
+        "id": IdType,
+        "admin_role": IdType,
     },
 )
 
 
-def id_to_str(serverJson):
-    # The reason front end has issues with big int
-    # so if not the bot convert the id to a string
-    if not g.is_bot:
-        serverJson["id"] = str(serverJson["id"])
-    return serverJson
-
-
 @ns.route("")
 class ServerList(Resource):
-    """Shows all Servers and lets you post to add a new one"""
+    """Shows all Discord Server and lets you post to add a new one"""
 
+    @ns.doc("discord_server_list")
+    @ns.marshal_with(serverModel)
     def get(self):
+        """Lists all discord servers"""
         return DiscordServer.query.all()
 
     @ns.doc("create_discord_server")
     @ns.expect(serverModel)
-    @ns.marshal_with(serverModel, code=201)
+    @ns.marshal_with(serverModel, code=200)
     def post(self):
         form = ns.payload
         serverId = form["id"]
